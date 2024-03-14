@@ -172,11 +172,14 @@ class DfAnalysis:
 
     # Methods for visualization
 
-    def plot_histograms(self):
+    def plot_histograms(self, features=[]):
         """
         Save histograms of numerical columns in the DataFrame to the current directory in an img folder.
         """
-        self.df.select_dtypes(include='number').hist(bins=50, figsize=(20, 15))
+        if features:
+            self.df[features].hist(bins=50, figsize=(20, 15))
+        else:
+            self.df.select_dtypes(include='number').hist(bins=50, figsize=(20, 15))
 
         if not os.path.exists('img'):
             os.makedirs('img')

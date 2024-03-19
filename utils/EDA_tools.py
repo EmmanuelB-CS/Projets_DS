@@ -208,9 +208,13 @@ class DfAnalysis:
         plt.savefig(f'img/corr/correlation_matrix_{title}.png')
         plt.close()
 
-    def plot_pairplot(self, target=None):
+    def plot_pairplot(self, title=None, target=None):
         """
         Save pairplot of numerical columns in the DataFrame to the current directory in an img folder.
+        Pairplots are made with 'hist' kind that combines computer efficiency and readability.
+        
+        
+        Note: This function needs to be uploaded to take into account hue and other arguments
 
         Args:
             target (str): The name of the target column if available.
@@ -219,12 +223,12 @@ class DfAnalysis:
             sns.pairplot(self.df, hue=target)
         else:
             numerical_cols = self.df.select_dtypes(include='number').columns
-            sns.pairplot(self.df[numerical_cols])
+            sns.pairplot(self.df[numerical_cols], kind='hist')
         
         if not os.path.exists('img/pairplots'):
             os.makedirs('img/pairplots')
 
-        plt.savefig(f'img/pairplots/pairplot{"_"+target if target else ""}.png')
+        plt.savefig(f'img/pairplots/pairplot{"_"+target if target else ""}_{title}.png')
         plt.close()
 
     def plot_boxplots(self, title=None, n_cols=3):

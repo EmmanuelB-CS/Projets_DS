@@ -243,7 +243,7 @@ class UMAPAnalysis:
         self.embedding = None
         self.corr_df = None
     
-    def reduce_dimensions(self, n_components=2, **kwargs):
+    def reduce_dimensions(self, n_components=2, metric="euclidean", n_neighbors=10, min_dist=0.1, learning_rate=1, **kwargs):
         """
         Reduce the dimensionality of the data using UMAP.
 
@@ -263,7 +263,7 @@ class UMAPAnalysis:
         self.feature_names = X.columns.tolist()
         self.X = X
 
-        umap_model = umap.UMAP(n_components=n_components, **kwargs)
+        umap_model = umap.UMAP(n_components=n_components, metric="euclidean", n_neighbors=10, min_dist=0.1, learning_rate=1, **kwargs)
         embedding = umap_model.fit_transform(X)
         self.embedding = embedding
 

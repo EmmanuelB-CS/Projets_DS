@@ -144,34 +144,6 @@ class DfAnalysis:
         
         return outlier_indices.tolist(), outlier_percentages
 
-    def identify_correlated_variables(self, threshold=0.8):
-        """
-        Find correlated variables in the DataFrame.
-
-        Args:
-            threshold (float): The threshold for correlation. Default is 0.8.
-
-        Returns:
-            Dataframe: A Dataframe of tuples containing the names of correlated variables and their correlation.
-        """
-
-        corr_matrix = self.df.corr()
-        correlated_vars = [(corr_matrix.columns[i], corr_matrix.columns[j]) 
-                   for i in range(len(corr_matrix.columns)) 
-                   for j in range(i+1, len(corr_matrix.columns)) 
-                   if abs(corr_matrix.iloc[i, j]) >= threshold]
-
-        correlated_vars_df = pd.DataFrame(correlated_vars, columns=['Var1', 'Var2'])
-
-        correlation_values = [corr_matrix.iloc[i, j] 
-                            for i in range(len(corr_matrix.columns)) 
-                            for j in range(i+1, len(corr_matrix.columns)) 
-                            if abs(corr_matrix.iloc[i, j]) >= threshold]
-
-        correlated_vars_df['Correlation'] = correlation_values
-
-        return correlated_vars
-
     # Methods for visualization
 
     def plot_histograms(self, title=None, features=[]):
@@ -189,18 +161,30 @@ class DfAnalysis:
         plt.savefig(f'img/hist/histograms_{title}.png')
         plt.close()
 
-    def correlation_matrix(self, title=None):
+    def correlation_matrix(self, title=None, method=None):
         """
         Save a heatmap of the correlation matrix of numerical columns in the DataFrame to the current directory in an img folder.
+        method : {pearson, spearman, kendall, mutual_info}
         """
         numerical_cols = self.df.select_dtypes(include='number').columns
 
         sns.set_style('white')
-        corr = self.df[numerical_cols].corr()
+        
+        if method and method in ['pearson', 'spearman', 'kendall']:
+            corr = self.df[numerical_cols].corr(method=method)
+        elif method == 'mutual_info':
+            mi_matrix = pd.DataFrame(index=numerical_cols, columns=numerical_cols)
+            for col in numerical_cols:
+                mi = mutual_info_regression(self.df, self.df[col])
+                mi_matrix.loc[col, :] = mi
+            corr = mi_matrix.astype('float64')
+        else:
+            corr = self.df[numerical_cols].corr()
+
         mask = np.zeros_like(corr)
         mask[np.triu_indices_from(mask)] = True
         plt.figure(figsize=(15, 10))
-        sns.heatmap(corr, mask=mask, annot=True, vmin=-1, vmax=1, cmap='coolwarm')
+        sns.heatmap(corr, mask=mask, annot=True, cmap='coolwarm')
 
         if not os.path.exists('img/corr'):
             os.makedirs('img/corr')

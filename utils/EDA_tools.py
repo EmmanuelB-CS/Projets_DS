@@ -20,10 +20,6 @@ from numpy.linalg import inv
 import os
 
 
-# Avant d'utiliser ces classes, il est essentiel de s'assurer que le dataset est compris
-# et que ses variables ont des types bien identifiés
-
-
 class DfAnalysis:
     """
     A class for performing basic analysis on a pandas DataFrame, because I'm done writing always the same
@@ -66,6 +62,7 @@ class DfAnalysis:
         indexes_rows_missing_val = self.df.index[self.df.isnull().any(axis=1)].tolist()
         print(f'Total number of rows with missing values: {total_rows_with_missing_values}')
         print(f'List of indexes of rows with missing values: {indexes_rows_missing_val}')
+        return indexes_rows_missing_val
 
     def impute_missing_values(self, strategy='mean'):
         """
@@ -174,17 +171,31 @@ class DfAnalysis:
             corr = self.df[numerical_cols].corr(method=method)
         elif method == 'mutual_info':
             mi_matrix = pd.DataFrame(index=numerical_cols, columns=numerical_cols)
+            max_mi_values = {}
+
+            # Calculate mutual information of each variable with itself
             for col in numerical_cols:
-                mi = mutual_info_regression(self.df, self.df[col])
-                mi_matrix.loc[col, :] = mi
+                mi_value = mutual_info_regression(self.df[[col]], self.df[col])[0]
+                if mi_value == 0:
+                    print(f"Warning: Mutual information of column {col} with itself is zero.")
+                max_mi_values[col] = mi_value
+
+            # Calculate mutual information between each pair of variables
+            for col in numerical_cols:
+                mi = mutual_info_regression(self.df[numerical_cols], self.df[col])
+                # Normalize by the maximum mutual information, handle zero max_mi_values
+                normalized_mi = [m / max_mi_values[col] if max_mi_values[col] != 0 else 0 for m in mi]
+                mi_matrix.loc[col, :] = normalized_mi
+
             corr = mi_matrix.astype('float64')
+            corr = corr.clip(upper=1)
         else:
             corr = self.df[numerical_cols].corr()
 
         mask = np.zeros_like(corr)
         mask[np.triu_indices_from(mask)] = True
         plt.figure(figsize=(15, 10))
-        sns.heatmap(corr, mask=mask, annot=True, cmap='coolwarm')
+        sns.heatmap(corr, mask=mask, annot=False, cmap='coolwarm')
 
         if not os.path.exists('img/corr'):
             os.makedirs('img/corr')

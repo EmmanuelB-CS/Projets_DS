@@ -224,7 +224,6 @@ class PCAAnalysis:
         reconstruction_error = np.mean(np.sum((X - reconstructed_X) ** 2, axis=1))
         return reconstruction_error
 
-    
 
 
 class UMAPAnalysis:
@@ -243,12 +242,14 @@ class UMAPAnalysis:
         self.embedding = None
         self.corr_df = None
     
-    def reduce_dimensions(self, n_components=2, metric="euclidean", n_neighbors=10, min_dist=0.1, learning_rate=1, **kwargs):
+    def reduce_dimensions(self, n_components=2, metric="euclidean", n_neighbors=10, min_dist=0.1, learning_rate=1, custom_metric=None, **kwargs):
         """
         Reduce the dimensionality of the data using UMAP.
 
         Args:
             n_components (int): Number of components for the reduced dimensionality, default is 2.
+            metric (str): Metric to use for distance computation. Default is "euclidean".
+            custom_metric (callable): Custom distance function.
             **kwargs: Additional arguments to pass to UMAP.
 
         Returns:
@@ -263,7 +264,11 @@ class UMAPAnalysis:
         self.feature_names = X.columns.tolist()
         self.X = X
 
-        umap_model = umap.UMAP(n_components=n_components, metric="euclidean", n_neighbors=10, min_dist=0.1, learning_rate=1, **kwargs)
+        if custom_metric:
+            umap_model = umap.UMAP(n_components=n_components, metric=custom_metric, n_neighbors=n_neighbors, min_dist=min_dist, learning_rate=learning_rate, **kwargs)
+        else:
+            umap_model = umap.UMAP(n_components=n_components, metric=metric, n_neighbors=n_neighbors, min_dist=min_dist, learning_rate=learning_rate, **kwargs)
+        
         embedding = umap_model.fit_transform(X)
         self.embedding = embedding
 
@@ -304,7 +309,7 @@ class UMAPAnalysis:
         embedding = self.embedding
 
         if not os.path.exists('img/umap'):
-                os.makedirs('img/umap')
+            os.makedirs('img/umap')
 
         if dimension == '2d':
             fig, ax = plt.subplots(figsize=(5, 5))
@@ -437,4 +442,4 @@ class UMAPAnalysis:
 
         plt.tight_layout()
         plt.savefig(f'img/umap/umap_correlation_heatmaps_{title}.png')
-        plt.close()  
+        plt.close()
